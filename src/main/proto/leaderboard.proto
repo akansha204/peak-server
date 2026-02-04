@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package peak;
+
+option java_multiple_files = true;
+option java_package = "com.akansha.peak_server.grpc";
+option java_outer_classname = "LeaderboardProto";
+
+service LeaderboardService {
+  rpc streamLeaderboard(stream ClientEvent) returns (stream ServerEvent);
+}
+
+message ClientEvent {
+  oneof payload {
+    JoinLeaderboard join = 1;
+    ScoreUpdate scoreUpdate = 2;
+  }
+}
+
+message JoinLeaderboard {
+  string userId = 1;
+}
+
+message ScoreUpdate {
+  string userId = 1;
+  int64 score = 2;
+}
+
+message ServerEvent {
+  oneof payload {
+    LeaderboardSnapshot snapshot = 1;
+    LeaderboardUpdate update = 2;
+  }
+}
+
+message LeaderboardSnapshot {
+  repeated LeaderboardEntry entries = 1;
+}
+
+message LeaderboardUpdate {
+  LeaderboardEntry entry = 1;
+}
+
+message LeaderboardEntry {
+  string userId = 1;
+  int64 score = 2;
+  int32 rank = 3;
+}
