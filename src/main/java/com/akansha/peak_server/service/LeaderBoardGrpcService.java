@@ -1,15 +1,15 @@
 package com.akansha.peak_server.service;
 
-import com.akansha.peak_server.grpc.ClientEvent;
-import com.akansha.peak_server.grpc.LeaderboardServiceGrpc;
-import com.akansha.peak_server.grpc.ServerEvent;
+import com.akansha.peak.grpc.ClientEvent;
+import com.akansha.peak.grpc.LeaderboardServiceGrpc;
+import com.akansha.peak.grpc.ServerEvent;
 import com.akansha.peak_server.redis.LeaderboardRedisService;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.grpc.server.service.GrpcService;
-import com.akansha.peak_server.grpc.LeaderboardSnapshot;
-import com.akansha.peak_server.grpc.LeaderboardEntry;
+import com.akansha.peak.grpc.LeaderboardSnapshot;
+import com.akansha.peak.grpc.LeaderboardEntry;
 
 import java.util.Set;
 
