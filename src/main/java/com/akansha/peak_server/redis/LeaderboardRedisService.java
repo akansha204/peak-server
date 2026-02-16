@@ -30,8 +30,13 @@ public class LeaderboardRedisService {
 //        );
 //    }
 
-    public void updateScore(String userId, double score){
+    public boolean updateScore(String userId, double score){
+        Double currscore = zSetOps.score(LEADERBOARD_KEY, userId);
+        if(currscore == null){
+            return false;
+        }
         zSetOps.add(LEADERBOARD_KEY, userId, score);
+        return true;
     }
 
     public Set<ZSetOperations.TypedTuple<String>> getTopPlayers(int topN){

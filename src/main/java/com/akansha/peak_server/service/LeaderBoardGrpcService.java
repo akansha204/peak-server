@@ -4,6 +4,7 @@ import com.akansha.peak.grpc.ClientEvent;
 import com.akansha.peak.grpc.LeaderboardServiceGrpc;
 import com.akansha.peak.grpc.ServerEvent;
 import com.akansha.peak_server.redis.LeaderboardRedisService;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -26,10 +27,18 @@ public class LeaderBoardGrpcService extends LeaderboardServiceGrpc.LeaderboardSe
                 if(clientEvent.getPayloadCase() == ClientEvent.PayloadCase.JOIN){
                     sendSnapshot(responseObserver);
                 } else if(clientEvent.getPayloadCase() == ClientEvent.PayloadCase.SCOREUPDATE){
-                    leaderboardRedisService.updateScore(
+                    boolean updated = leaderboardRedisService.updateScore(
                             clientEvent.getScoreUpdate().getUserId(),
                             clientEvent.getScoreUpdate().getScore()
                     );
+                    if(!updated){
+                        responseObserver.onError(
+                                Status.NOT_FOUND
+                                        .withDescription("User not found: " + clientEvent.getScoreUpdate().getUserId())
+                                        .asRuntimeException()
+                        );
+                        return;
+                    }
                     sendSnapshot(responseObserver);
                 }
             }
