@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.grpc.server.service.GrpcService;
 import com.akansha.peak.grpc.LeaderboardSnapshot;
 import com.akansha.peak.grpc.LeaderboardEntry;
+import com.akansha.peak.grpc.ServerEvent;
 
 import java.util.Set;
 
@@ -18,6 +19,8 @@ import java.util.Set;
 public class LeaderBoardGrpcService extends LeaderboardServiceGrpc.LeaderboardServiceImplBase {
     @Autowired
     private LeaderboardRedisService leaderboardRedisService;
+    @Autowired
+    private LeaderboardSnapshotService leaderboardSnapshotService;
 
     @Override
     public StreamObserver<ClientEvent> streamLeaderboard(StreamObserver<ServerEvent> responseObserver) {
@@ -35,7 +38,11 @@ public class LeaderBoardGrpcService extends LeaderboardServiceGrpc.LeaderboardSe
                         return;
                     }
                     leaderboardRedisService.joinLeaderboard(clientEvent.getJoin().getUserId());
-                    sendSnapshot(responseObserver);
+                    responseObserver.onNext(
+                            ServerEvent.newBuilder()
+                                            .setSnapshot(leaderboardSnapshotService.getCurrentSnapshot(10))
+                                    .build()
+                    );
                 } else if(clientEvent.getPayloadCase() == ClientEvent.PayloadCase.SCOREUPDATE){
                     boolean updated = leaderboardRedisService.updateScore(
                             clientEvent.getScoreUpdate().getUserId(),
@@ -49,7 +56,11 @@ public class LeaderBoardGrpcService extends LeaderboardServiceGrpc.LeaderboardSe
                         );
                         return;
                     }
-                    sendSnapshot(responseObserver);
+                    responseObserver.onNext(
+                            ServerEvent.newBuilder()
+                                    .setSnapshot(leaderboardSnapshotService.getCurrentSnapshot(10))
+                                    .build()
+                    );
                 }
             }
 
@@ -64,36 +75,36 @@ public class LeaderBoardGrpcService extends LeaderboardServiceGrpc.LeaderboardSe
         };
 
     }
-    private void sendSnapshot(StreamObserver<ServerEvent> responseObserver){
-        Set<ZSetOperations.TypedTuple<String>> players = leaderboardRedisService.getTopPlayers(10);
-
-        LeaderboardSnapshot.Builder snapshotBuilder = LeaderboardSnapshot.newBuilder();
-
-        int position = 0;
-        int rank = 1;
-        Double prevscore = null;
-        if(players != null){
-            for(ZSetOperations.TypedTuple<String> player : players){
-                position++;
-                Double currscore = player.getScore();
-                if(prevscore == null || !currscore.equals(prevscore)){
-                    rank = position;
-                }
-                snapshotBuilder.addEntries(
-                        LeaderboardEntry.newBuilder()
-                                .setUserId(player.getValue())
-                                .setScore(player.getScore().longValue())
-                                .setRank(rank)
-                                .build()
-                );
-                prevscore = currscore;
-            }
-        }
-        responseObserver.onNext(
-                ServerEvent.newBuilder()
-                        .setSnapshot(snapshotBuilder.build())
-                        .build()
-        );
-    }
+//    private void sendSnapshot(StreamObserver<ServerEvent> responseObserver){
+//        Set<ZSetOperations.TypedTuple<String>> players = leaderboardRedisService.getTopPlayers(10);
+//
+//        LeaderboardSnapshot.Builder snapshotBuilder = LeaderboardSnapshot.newBuilder();
+//
+//        int position = 0;
+//        int rank = 1;
+//        Double prevscore = null;
+//        if(players != null){
+//            for(ZSetOperations.TypedTuple<String> player : players){
+//                position++;
+//                Double currscore = player.getScore();
+//                if(prevscore == null || !currscore.equals(prevscore)){
+//                    rank = position;
+//                }
+//                snapshotBuilder.addEntries(
+//                        LeaderboardEntry.newBuilder()
+//                                .setUserId(player.getValue())
+//                                .setScore(player.getScore().longValue())
+//                                .setRank(rank)
+//                                .build()
+//                );
+//                prevscore = currscore;
+//            }
+//        }
+//        responseObserver.onNext(
+//                ServerEvent.newBuilder()
+//                        .setSnapshot(snapshotBuilder.build())
+//                        .build()
+//        );
+//    }
 
 }

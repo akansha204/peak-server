@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 
 package peak;
 
@@ -8,6 +9,10 @@ option java_outer_classname = "LeaderboardProto";
 
 service LeaderboardService {
   rpc streamLeaderboard(stream ClientEvent) returns (stream ServerEvent);
+}
+
+service LeaderboardQueryService {
+  rpc getLeaderboard(google.protobuf.Empty) returns (LeaderboardSnapshot);
 }
 
 message ClientEvent {
