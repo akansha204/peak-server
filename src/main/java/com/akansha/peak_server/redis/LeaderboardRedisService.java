@@ -38,6 +38,12 @@ public class LeaderboardRedisService {
         zSetOps.add(LEADERBOARD_KEY, userId, score);
         return true;
     }
+    public void joinLeaderboard(String userId){
+        Double existingscore = zSetOps.score(LEADERBOARD_KEY, userId);
+        if(existingscore == null){
+            zSetOps.add(LEADERBOARD_KEY, userId, 0.0);
+        }
+    }
 
     public Set<ZSetOperations.TypedTuple<String>> getTopPlayers(int topN){
         return zSetOps.reverseRangeWithScores(LEADERBOARD_KEY, 0, topN - 1);

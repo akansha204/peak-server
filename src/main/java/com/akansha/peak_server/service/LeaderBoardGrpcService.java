@@ -25,6 +25,16 @@ public class LeaderBoardGrpcService extends LeaderboardServiceGrpc.LeaderboardSe
             @Override
             public void onNext(ClientEvent clientEvent){
                 if(clientEvent.getPayloadCase() == ClientEvent.PayloadCase.JOIN){
+                    String userId = clientEvent.getJoin().getUserId();
+                    if(userId == null || userId.isEmpty()){
+                        responseObserver.onError(
+                                Status.INVALID_ARGUMENT
+                                        .withDescription("User ID cannot be null or empty")
+                                        .asRuntimeException()
+                        );
+                        return;
+                    }
+                    leaderboardRedisService.joinLeaderboard(clientEvent.getJoin().getUserId());
                     sendSnapshot(responseObserver);
                 } else if(clientEvent.getPayloadCase() == ClientEvent.PayloadCase.SCOREUPDATE){
                     boolean updated = leaderboardRedisService.updateScore(
