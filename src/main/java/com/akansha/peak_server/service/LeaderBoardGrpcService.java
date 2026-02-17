@@ -69,16 +69,24 @@ public class LeaderBoardGrpcService extends LeaderboardServiceGrpc.LeaderboardSe
 
         LeaderboardSnapshot.Builder snapshotBuilder = LeaderboardSnapshot.newBuilder();
 
+        int position = 0;
         int rank = 1;
+        Double prevscore = null;
         if(players != null){
             for(ZSetOperations.TypedTuple<String> player : players){
+                position++;
+                Double currscore = player.getScore();
+                if(prevscore == null || !currscore.equals(prevscore)){
+                    rank = position;
+                }
                 snapshotBuilder.addEntries(
                         LeaderboardEntry.newBuilder()
                                 .setUserId(player.getValue())
                                 .setScore(player.getScore().longValue())
-                                .setRank(rank++)
+                                .setRank(rank)
                                 .build()
                 );
+                prevscore = currscore;
             }
         }
         responseObserver.onNext(
