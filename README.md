@@ -1,7 +1,81 @@
-# Peak Server
+# Peak (v2)
+Real-time Leaderboard Service using gRPC and Redis.
+
+---
+
+##  What’s New in v2
+
+Peak v2 introduces architectural improvements and cleaner separation of concerns while preserving the original real-time streaming model.
+
+### Key Improvements
+
+- Shared ranking logic (Standard Competition Ranking – ties share same rank)
+- Separation of mutation and query responsibilities
+- Added unary `GetLeaderboard` RPC for read-only dashboard access
+- Refactored snapshot-building into a dedicated service layer
+- Improved validation for JOIN and SCORE_UPDATE events
+- Cleaner layered architecture (Redis → Business → gRPC)
+
+---
+
+## Updated Architecture (v2)
+
+```
+Client (Streaming) → LeaderboardGrpcService
+Client (Unary)     → LeaderboardQueryGrpcService
+                        ↓
+                LeaderboardSnapshotService
+                        ↓
+                LeaderboardRedisService
+                        ↓
+                        Redis (ZSET)
+```
+
+### Design Philosophy
+
+- Redis remains the single source of truth.
+- Business logic (ranking + snapshot building) is isolated in a dedicated service.
+- gRPC layer handles transport only.
+- Full leaderboard snapshots are sent after each mutation.
+- Unary RPC enables dashboard-style leaderboard viewing without joining.
+
+---
+
+## Ranking Model (v2)
+
+Implements **Standard Competition Ranking** (shared ranks for equal scores).
+
+Example:
+
+| User | Score | Rank |
+|------|-------|------|
+| A    | 100   | 1    |
+| B    | 100   | 1    |
+| C    | 90    | 2    |
+
+Ranks are calculated in memory after fetching sorted data from Redis.
+
+---
+
+## gRPC API (v2 Overview)
+
+### Streaming Service
+
+- `JOIN` – Adds user (if not existing) with default score 0 and returns snapshot
+- `SCORE_UPDATE` – Updates score and returns updated snapshot
+- `SNAPSHOT` – Full leaderboard snapshot streamed to client
+
+### Unary Service
+
+- `getLeaderboard` – Returns current leaderboard snapshot (read-only)
+
+---
+
+
+# Peak (v1)
 Real-time Leaderboard Service using gRPC and Redis.
 ## Overview
-**Peak Server** is a backend service that provides a **real-time leaderboard** using **gRPC bidirectional streaming** and **Redis Sorted Sets**.
+**Peak** is a backend service that provides a **real-time leaderboard** using **gRPC bidirectional streaming** and **Redis Sorted Sets**.
 
 Clients can:  
 - Join the leaderboard stream
