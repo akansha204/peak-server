@@ -69,6 +69,65 @@ Ranks are calculated in memory after fetching sorted data from Redis.
 
 - `getLeaderboard` – Returns current leaderboard snapshot (read-only)
 
+## Protofile Quickview
+
+```protobuf
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+package peak;
+
+option java_multiple_files = true;
+option java_package = "com.akansha.peak.grpc";
+option java_outer_classname = "LeaderboardProto";
+
+service LeaderboardService {
+  rpc streamLeaderboard(stream ClientEvent) returns (stream ServerEvent);
+}
+
+service LeaderboardQueryService {
+  rpc getLeaderboard(google.protobuf.Empty) returns (LeaderboardSnapshot);
+}
+
+message ClientEvent {
+  oneof payload {
+    JoinLeaderboard join = 1;
+    ScoreUpdate scoreUpdate = 2;
+  }
+}
+
+message JoinLeaderboard {
+  string userId = 1;
+}
+
+message ScoreUpdate {
+  string userId = 1;
+  int64 score = 2;
+}
+
+message ServerEvent {
+  oneof payload {
+    LeaderboardSnapshot snapshot = 1;
+    LeaderboardUpdate update = 2;
+  }
+}
+
+message LeaderboardSnapshot {
+  repeated LeaderboardEntry entries = 1;
+}
+
+message LeaderboardUpdate {
+  LeaderboardEntry entry = 1;
+}
+
+message LeaderboardEntry {
+  string userId = 1;
+  int64 score = 2;
+  int32 rank = 3;
+}
+
+```
+
 ---
 
 
